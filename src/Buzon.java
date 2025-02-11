@@ -23,7 +23,7 @@ public class Buzon {
             wait(); 
         }
         Producto p = productos.poll();
-        notifyAll(); // Notifica a los hilos en espera
+        notifyAll(); 
         return p;
     }
 
