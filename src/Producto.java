@@ -1,6 +1,6 @@
 
 public class Producto {
-    private int id;
+    protected int id;
     private boolean aprobado;
 
         public Producto(int id) {
