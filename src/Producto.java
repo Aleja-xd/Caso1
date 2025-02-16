@@ -1,17 +1,14 @@
-import java.util.Random;
-import java.util.concurrent.CyclicBarrier;
-
 public class Producto {
-    private String nombre;
-    private boolean aprobado;
+    private int id;
+    private boolean aprobado; // Indica si pasó la revisión de calidad
 
-    public Producto(String nombre) {
-        this.nombre = nombre;
+    public Producto(int id) {
+        this.id = id;
         this.aprobado = false; // Por defecto, no aprobado
     }
 
-    public String getNombre() {
-        return nombre;
+    public int getId() {
+        return id;
     }
 
     public boolean isAprobado() {
@@ -22,14 +19,8 @@ public class Producto {
         this.aprobado = aprobado;
     }
 
-    public void evaluarCalidad() {
-        int numero = (int) (Math.random() * 100) + 1;
-        this.aprobado = numero % 7 != 0;
-    }
-    
     @Override
     public String toString() {
-        return nombre;
+        return "Producto " + id + " [" + (aprobado ? "Aprobado" : "Rechazado") + "]";
     }
 }
-

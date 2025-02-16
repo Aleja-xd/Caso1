@@ -1,71 +1,43 @@
-import java.util.Random;
-import java.util.concurrent.CyclicBarrier;
 
 public class Productor extends Thread {
+    private static int contadorId = 1;
     private Buzon buzonReproceso;
     private Buzon buzonRevision;
     private int id;
-    private boolean fin;
-    private CyclicBarrier barrera;
-    
-    public Productor(int id, Buzon buzonReproceso, Buzon buzonRevision, CyclicBarrier barrera) {
+    private boolean continuar = true;
+
+    public Productor(int id, Buzon buzonReproceso, Buzon buzonRevision) {
         this.id = id;
         this.buzonReproceso = buzonReproceso;
         this.buzonRevision = buzonRevision;
-        this.barrera = barrera;
-        this.fin = false;
-    }
-    
-    public boolean revisarReproceso() {
-        synchronized (buzonReproceso) {
-            return buzonReproceso.estaVacio();
-        }
-    }
-    
-    public Producto crearProducto(String s) {
-        return new Producto(s);
     }
 
     @Override
     public void run() {
-        Random rand = new Random();
         try {
-            while (!fin) {
-                if (revisarReproceso()) {
-                    int idProd = rand.nextInt(10000000);
-                    Producto p = crearProducto(String.valueOf(idProd));
-                    synchronized (buzonRevision) {
-                        while (buzonRevision.estaLleno()) {
-                            buzonRevision.wait();
-                        }
-                        buzonRevision.depositar(p);
-                        buzonRevision.notifyAll();
-                    }
-                    System.out.println("Productor " + id + " creó el producto " + idProd);
+            while (continuar) {
+                Producto producto;
+                
+                // Reprocesar si hay productos en el buzón de reproceso
+                if (!buzonReproceso.estaVacio()) {
+                    producto = buzonReproceso.retirar();
+                    System.out.println("Productor " + id + " reprocesa " + producto);
                 } else {
-                    Producto p;
-                    synchronized (buzonReproceso) {
-                        p = buzonReproceso.retirar();
-                    }
-                    if ("FIN".equals(p.getNombre())) {
-                        fin = true;
-                        System.out.println("Productor " + id + " ha terminado.");
-                    } else {
-                        synchronized (buzonRevision) {
-                            while (buzonRevision.estaLleno()) {
-                                buzonRevision.wait();
-                            }
-                            buzonRevision.depositar(p);
-                            buzonRevision.notifyAll();
-                        }
-                        System.out.println("Productor " + id + " reprocesó el producto " + p.getNombre());
-                    }
+                    // Si no hay nada que reprocesar, generar un nuevo producto
+                    producto = new Producto(contadorId++);
+                    System.out.println("Productor " + id + " genera " + producto);
                 }
+
+                // Si el buzón de revisión está lleno, espera
+                buzonRevision.depositar(producto);
+                System.out.println("Productor " + id + " deposita en buzón de revisión: " + producto);
             }
-            barrera.await();
-        } catch (Exception e) {
-            System.out.println("Error en productor " + id);
-            e.printStackTrace();
+        } catch (InterruptedException e) {
+            System.out.println("Productor " + id + " interrumpido.");
         }
+    }
+
+    public void terminar() {
+        this.continuar = false;
     }
 }
