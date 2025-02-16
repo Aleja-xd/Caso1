@@ -12,20 +12,20 @@ public class Buzon {
 
     public synchronized void depositar(Producto p) throws InterruptedException {
         while (productos.size() >= capacidad && !LineaProduccion.fin) {
-            wait(); // Espera si está lleno
+            wait(); 
         }
         if (!LineaProduccion.fin) {
             productos.add(p);
-            notifyAll(); // Notifica a los consumidores
+            notifyAll();
         }
     }
 
     public synchronized Producto retirar() throws InterruptedException {
         while (productos.isEmpty() && !LineaProduccion.fin) {
-            wait(); // Espera si está vacío
+            wait(); 
         }
         Producto p = productos.poll();
-        notifyAll(); // Notifica a los productores
+        notifyAll(); 
         return p;
     }
 

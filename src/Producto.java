@@ -4,7 +4,7 @@ public class Producto {
 
     public Producto(int id) {
         this.id = id;
-        this.aprobado = false; // Por defecto, no aprobado
+        this.aprobado = false; 
     }
 
     public int getId() {
