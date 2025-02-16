@@ -21,6 +21,10 @@ public class Producto {
 
     @Override
     public String toString() {
-        return "Producto " + id + " [" + (aprobado ? "Aprobado" : "Rechazado") + "]";
+        if (aprobado) {
+            return "Producto " + id + " [Aprobado]";
+        } else {
+            return "Producto " + id + " [Rechazado]";
+        }
     }
 }
