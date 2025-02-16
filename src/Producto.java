@@ -1,14 +1,14 @@
 
 public class Producto {
-    protected int id;
+    protected String id;
     private boolean aprobado;
 
-        public Producto(int id) {
+        public Producto(String id) {
             this.id = id;
             this.aprobado = false; // Por defecto, no aprobado
         }
     
-        public int getId() {
+        public String getId() {
             return id;
         }
     
