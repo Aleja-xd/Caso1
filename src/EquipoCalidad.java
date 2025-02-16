@@ -37,7 +37,7 @@ public void run() {
                 deposito.almacenar(producto);
             }
 
-            // ⚠️ Enviar FIN solo una vez
+            
             synchronized (LineaProduccion.class) {
                 if (deposito.getTotalProductos() >= productosMaximos && !LineaProduccion.fin) {
                     System.out.println("Equipo de Calidad envía mensaje FIN.");
