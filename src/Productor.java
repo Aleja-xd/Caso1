@@ -1,10 +1,9 @@
 
 public class Productor extends Thread {
     private static int contadorId = 1;
-    private Buzon buzonReproceso;
-    private Buzon buzonRevision;
-    private int id;
-    private boolean continuar = true;
+    private final Buzon buzonReproceso;
+    private final Buzon buzonRevision;
+    private final int id;
 
     public Productor(int id, Buzon buzonReproceso, Buzon buzonRevision) {
         this.id = id;
@@ -13,31 +12,35 @@ public class Productor extends Thread {
     }
 
     @Override
-    public void run() {
-        try {
-            while (continuar) {
-                Producto producto;
-                
-                // Reprocesar si hay productos en el buzón de reproceso
+public void run() {
+    try {
+        while (!LineaProduccion.fin) {
+            Producto producto;
+
+            synchronized (buzonReproceso) {
                 if (!buzonReproceso.estaVacio()) {
                     producto = buzonReproceso.retirar();
+                    if (producto.getId() == -1) {
+                        System.out.println("Productor " + id + " recibe FIN y termina.");
+                        break;
+                    }
                     System.out.println("Productor " + id + " reprocesa " + producto);
                 } else {
-                    // Si no hay nada que reprocesar, generar un nuevo producto
                     producto = new Producto(contadorId++);
                     System.out.println("Productor " + id + " genera " + producto);
                 }
+            }
 
-                // Si el buzón de revisión está lleno, espera
+            // Verificación adicional de FIN tras esperar
+            if (!LineaProduccion.fin) {
                 buzonRevision.depositar(producto);
                 System.out.println("Productor " + id + " deposita en buzón de revisión: " + producto);
+            } else {
+                break;
             }
-        } catch (InterruptedException e) {
-            System.out.println("Productor " + id + " interrumpido.");
         }
+    } catch (InterruptedException e) {
+        System.out.println("Productor " + id + " interrumpido.");
     }
-
-    public void terminar() {
-        this.continuar = false;
-    }
+ }
 }

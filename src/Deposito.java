@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Deposito {
-    private List<Producto> productosFinales = new ArrayList<>();
+    private final List<Producto> productosFinales = new ArrayList<>();
 
     public synchronized void almacenar(Producto p) {
         productosFinales.add(p);

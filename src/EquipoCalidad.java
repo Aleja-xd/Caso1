@@ -1,12 +1,11 @@
 import java.util.Random;
 
 public class EquipoCalidad extends Thread {
-    private Buzon buzonRevision;
-    private Buzon buzonReproceso;
-    private Deposito deposito;
-    private int productosMaximos;
+    private final Buzon buzonRevision;
+    private final Buzon buzonReproceso;
+    private final Deposito deposito;
+    private final int productosMaximos;
     private int productosFallidos = 0;
-    private boolean continuar = true;
     private static final Random random = new Random();
 
     public EquipoCalidad(Buzon buzonRevision, Buzon buzonReproceso, Deposito deposito, int productosMaximos) {
@@ -17,31 +16,46 @@ public class EquipoCalidad extends Thread {
     }
 
     @Override
-    public void run() {
-        try {
-            while (continuar) {
-                Producto producto = buzonRevision.retirar();
+public void run() {
+    try {
+        while (!LineaProduccion.fin) {
+            Producto producto = buzonRevision.retirar();
+            if (producto == null) continue;
 
-                // Evaluación de calidad (falla si es múltiplo de 7 y aún no se ha alcanzado el máximo de fallos)
-                if (random.nextInt(100) % 7 == 0 && productosFallidos < (int) Math.floor(0.1 * productosMaximos)) {
-                    productosFallidos++;
-                    System.out.println("Equipo de Calidad rechaza " + producto);
-                    buzonReproceso.depositar(producto);
-                } else {
-                    producto.setAprobado(true);
-                    System.out.println("Equipo de Calidad aprueba " + producto);
-                    deposito.almacenar(producto);
-                }
+            if (producto.getId() == -1) { 
+                System.out.println("Equipo de Calidad recibe FIN y termina.");
+                break;
+            }
 
-                // Verifica si se ha alcanzado el límite de productos aprobados
-                if (deposito.getTotalProductos() >= productosMaximos) {
+            if (random.nextInt(100) % 7 == 0 && productosFallidos < Math.floor(0.1 * productosMaximos)) {
+                productosFallidos++;
+                System.out.println("Equipo de Calidad rechaza " + producto);
+                buzonReproceso.depositar(producto);
+            } else {
+                producto.setAprobado(true);
+                System.out.println("Equipo de Calidad aprueba " + producto);
+                deposito.almacenar(producto);
+            }
+
+            // ⚠️ Enviar FIN solo una vez
+            synchronized (LineaProduccion.class) {
+                if (deposito.getTotalProductos() >= productosMaximos && !LineaProduccion.fin) {
                     System.out.println("Equipo de Calidad envía mensaje FIN.");
-                    buzonReproceso.depositar(new Producto(-1)); // Producto con id -1 indica "FIN"
-                    continuar = false;
+                    buzonReproceso.depositar(new Producto(-1)); // Producto especial FIN
+                    LineaProduccion.fin = true;
+
+                    // Notificar a todos
+                    synchronized (buzonRevision) {
+                        buzonRevision.notifyAll();
+                    }
+                    synchronized (buzonReproceso) {
+                        buzonReproceso.notifyAll();
+                    }
                 }
             }
-        } catch (InterruptedException e) {
-            System.out.println("Equipo de Calidad interrumpido.");
         }
+    } catch (InterruptedException e) {
+        System.out.println("Equipo de Calidad interrumpido.");
     }
+ }
 }
