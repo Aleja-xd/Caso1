@@ -55,7 +55,7 @@ public class LineaProduccion {
         }
      }
 
-System.out.println("Línea de producción finalizada.");
+     System.out.println("Línea de producción finalizada.");
 
         scanner.close();
     }
