@@ -4,27 +4,27 @@ import java.util.Queue;
 public class Buzon {
     private Queue<Producto> productos;
     private int capacidad;
-     
+
     public Buzon(int capacidad) {
-        this.capacidad = capacidad;
         this.productos = new LinkedList<>();
+        this.capacidad = capacidad;
     }
 
-    public synchronized void depositar(Producto p) throws InterruptedException {
-        while (productos.size() >= capacidad) {
-            wait(); 
+    public synchronized void depositar(Producto producto) throws InterruptedException {
+        while (productos.size() == capacidad) {
+            wait();
         }
-        productos.add(p);
-        notifyAll(); 
+        productos.add(producto);
+        notifyAll();
     }
-    
+
     public synchronized Producto retirar() throws InterruptedException {
         while (productos.isEmpty()) {
-            wait(); 
+            wait();
         }
-        Producto p = productos.poll();
-        notifyAll(); 
-        return p;
+        Producto producto = productos.poll();
+        notifyAll();
+        return producto;
     }
 
     public synchronized boolean estaVacio() {

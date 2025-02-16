@@ -1,103 +1,71 @@
 import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
 
-public class Productor extends Thread{
-	
+public class Productor extends Thread {
     private Buzon buzonReproceso;
     private Buzon buzonRevision;
     private int id;
-    private String fin;
+    private boolean fin;
+    private CyclicBarrier barrera;
     
-    public Productor(int id, Buzon buzonReproceso, Buzon buzonRevision) {
-    	
-    	this.id = id;
-		this.buzonReproceso = buzonReproceso;
-		this.buzonRevision = buzonRevision;
-		
-	}
-    
-    public boolean Revisar(Buzon buzonReproceso) {
-    	
-    	boolean b = this.buzonReproceso.estaVacio();
-    	return b;
-    	
+    public Productor(int id, Buzon buzonReproceso, Buzon buzonRevision, CyclicBarrier barrera) {
+        this.id = id;
+        this.buzonReproceso = buzonReproceso;
+        this.buzonRevision = buzonRevision;
+        this.barrera = barrera;
+        this.fin = false;
     }
     
-    public Producto Crear(String s) {
-    	
-    	Producto p = new Producto(s);
-    	return p;
-    	
+    public boolean revisarReproceso() {
+        synchronized (buzonReproceso) {
+            return buzonReproceso.estaVacio();
+        }
     }
-	
-	public void run() {
-		
-		Random rand = new Random();	
-		
-		while(fin != "FIN") {
-			
-			if(Revisar(this.buzonReproceso)) {
-				
-				int id = rand.nextInt(10000000);
-				String idString = String.valueOf(id);
-				Producto p = Crear(idString);
-				
-				while(this.buzonRevision.estaLleno()) {
-					try {
-						this.buzonRevision.wait();
-					} catch (InterruptedException e) {
-						System.out.println( "Error del productor " + this.id + " al esperar el Buzon de Revision." );
-						e.printStackTrace();
-					}
-				}
-				
-				try {
-					this.buzonRevision.depositar(p);
-				} catch (InterruptedException e) {
-					System.out.println( "Error del productor " + this.id + " al depositar el producto." );
-					e.printStackTrace();
-				}
-				System.out.println( "El productor " + this.id + " Ha creado el producto con id " + id );
-				
-			}else {
-				
-				Producto p = null;
-				try {
-					p = this.buzonReproceso.retirar();
-				} catch (InterruptedException e) {
-					System.out.println( "Error del productor " + this.id + " al retirar el producto." );
-					e.printStackTrace();
-				}
-				
-				if(p.getId() == "FIN") {
-					
-					this.fin = "FIN";
-					System.out.println("El productor " + this.id + " ha terminado de producir.");
-					
-				}else {
-					
-					while(this.buzonRevision.estaLleno()) {
-						try {
-							this.buzonRevision.wait();
-						} catch (InterruptedException e) {
-							System.out.println( "Error del productor " + this.id + " al esperar el Buzon de Revision." );
-							e.printStackTrace();
-						}
-					}
-					
-					try {
-						this.buzonRevision.depositar(p);
-					} catch (InterruptedException e) {
-						System.out.println( "Error del productor " + this.id + " al retirar el producto." );
-						e.printStackTrace();
-					}
-					System.out.println( "El productor " + this.id + " Ha reprocesado el producto con id " + p.getId() );
-					
-				}
-				
-			}
-			
-		}
-		
-	}
-	
+    
+    public Producto crearProducto(String s) {
+        return new Producto(s);
+    }
+
+    @Override
+    public void run() {
+        Random rand = new Random();
+        try {
+            while (!fin) {
+                if (revisarReproceso()) {
+                    int idProd = rand.nextInt(10000000);
+                    Producto p = crearProducto(String.valueOf(idProd));
+                    synchronized (buzonRevision) {
+                        while (buzonRevision.estaLleno()) {
+                            buzonRevision.wait();
+                        }
+                        buzonRevision.depositar(p);
+                        buzonRevision.notifyAll();
+                    }
+                    System.out.println("Productor " + id + " creó el producto " + idProd);
+                } else {
+                    Producto p;
+                    synchronized (buzonReproceso) {
+                        p = buzonReproceso.retirar();
+                    }
+                    if ("FIN".equals(p.getNombre())) {
+                        fin = true;
+                        System.out.println("Productor " + id + " ha terminado.");
+                    } else {
+                        synchronized (buzonRevision) {
+                            while (buzonRevision.estaLleno()) {
+                                buzonRevision.wait();
+                            }
+                            buzonRevision.depositar(p);
+                            buzonRevision.notifyAll();
+                        }
+                        System.out.println("Productor " + id + " reprocesó el producto " + p.getNombre());
+                    }
+                }
+            }
+            barrera.await();
+        } catch (Exception e) {
+            System.out.println("Error en productor " + id);
+            e.printStackTrace();
+        }
+    }
 }
