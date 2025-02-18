@@ -1,22 +1,15 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Deposito {
-    private Queue<Producto> productos;
+    private final List<Producto> productosFinales = new ArrayList<>();
 
-    public Deposito() {
-        this.productos = new LinkedList<>();
+    public synchronized void almacenar(Producto p) {
+        productosFinales.add(p);
+        System.out.println("Producto almacenado en el depósito: " + p);
     }
 
-    public synchronized void almacenar(Producto producto) {
-        productos.add(producto);
-        notifyAll();
-    }
-
-    public synchronized Producto retirar() throws InterruptedException {
-        while (productos.isEmpty()) {
-            wait();
-        }
-        return productos.poll();
+    public synchronized int getTotalProductos() {
+        return productosFinales.size();
     }
 }

@@ -6,25 +6,27 @@ public class Buzon {
     private int capacidad;
 
     public Buzon(int capacidad) {
-        this.productos = new LinkedList<>();
         this.capacidad = capacidad;
+        this.productos = new LinkedList<>();
     }
 
-    public synchronized void depositar(Producto producto) throws InterruptedException {
-        while (productos.size() == capacidad) {
-            wait();
+    public synchronized void depositar(Producto p) throws InterruptedException {
+        while (productos.size() >= capacidad && !LineaProduccion.fin) {
+            wait(); 
         }
-        productos.add(producto);
-        notifyAll();
+        if (!LineaProduccion.fin) {
+            productos.add(p);
+            notifyAll();
+        }
     }
 
     public synchronized Producto retirar() throws InterruptedException {
-        while (productos.isEmpty()) {
-            wait();
+        while (productos.isEmpty() && !LineaProduccion.fin) {
+            wait(); 
         }
-        Producto producto = productos.poll();
-        notifyAll();
-        return producto;
+        Producto p = productos.poll();
+        notifyAll(); 
+        return p;
     }
 
     public synchronized boolean estaVacio() {
